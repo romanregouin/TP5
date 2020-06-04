@@ -59,12 +59,14 @@ int main(int argc,char *argv[])
 /******************************************************************************/	
 void serveur_appli(char *service)
 
-/* Procedure correspondant au traitemnt du serveur de votre application */
+/* Procedure correspondant au traitement du serveur de votre application */
 
 {
 
-/* A completer ... */
-
+int id_socket = h_socket(AF_INET,SOCK_DGRAM);
+struct sockaddr_in *p_adr_serv;
+adr_socket(service,NULL,SOCK_DGRAM,&p_adr_serv);
+h_bind(id_socket,p_adr_serv);
 }
 
 /******************************************************************************/	

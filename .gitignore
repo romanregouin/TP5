@@ -1,6 +1,12 @@
 # Prerequisites
 *.d
 
+#Executable
+exe
+
+#Archives
+*.zip
+
 # Object files
 *.o
 *.ko

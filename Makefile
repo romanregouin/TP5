@@ -10,5 +10,8 @@ string.o: string.c string.h
 pendue.o: pendue.c string.h
 	gcc -Wall -Werror -c pendue.c -o pendue.o
 
+client.o: client.c sys/signal.h sys/wait.h fon.h
+	gcc -Wall -Werror -c pendue.c -o pendue.o
+
 exe: pendue.o string.o
 	gcc -Wall -Werror pendue.o string.o -o exe

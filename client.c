@@ -1,12 +1,12 @@
 /******************************************************************************/
-/*			Application: ... */
+/*			Application: pendu */
 /******************************************************************************/
 /*									      */
 /*			 programme  CLIENT				      */
 /*									      */
 /******************************************************************************/
 /*									      */
-/*		Auteurs : ... 					*/
+/*		Auteurs : REGOUIN Roman ANDRIEUX Liam 					*/
 /*									      */
 /******************************************************************************/
 
@@ -27,7 +27,6 @@
 #include "string.h"
 
 #define SERVICE_DEFAUT "1111"
-#define SERVEUR_CLIENT "192.168.1.16"
 #define SERVEUR_DEFAUT "127.0.0.1"
 #define Max 10
 #define Try 10
@@ -73,36 +72,39 @@ char* buffer = NULL;
 
 int read_char(char* ch) { return read(STDIN, ch, 1); }
 
+/* Structure qui contient l'etat actuel du mot à trouver */
 typedef struct {
   char* mot;
   char* lettre;
   char* lettre_bonne;
-  int try
-    ;
+  int try;
   int bon;
   int nb;
 } Actuel;
 
+/* Initialise la strucutre */
 Actuel init_actuel(int taille) {
   Actuel a;
   a.mot = malloc(sizeof(char) * taille);
   for (int i = 0; i < taille; i++) a.mot[i] = '0';
   a.lettre = malloc(sizeof(char) * Max);
   a.lettre_bonne = malloc(sizeof(char) * Max);
-  a.try
-    = 0;
+  a.try = 0;
   a.bon = 0;
   a.nb = taille;
   return a;
 }
 
+/* Actualise les essaies et les lettres qui ont été utilises */
 Actuel ajouter_actuel(Actuel a, char* c) {
   a.lettre[a.try] = c[0];
-  a.try
-    ++;
+  a.try ++;
   return a;
 }
 
+/* Prend une lettre reponse et actualise l'avancement du mot cherché via la structure a 
+et met a jour le tableau indices avec les indices des occurences de la lettre dans le mot 
+cherché et renvoie ce nombre d'occurence */
 int actualiser(char* reponse, int indice, Actuel* a) {
   if (indice == -1) return -1;
   if (string_index_of(a->lettre_bonne, 0, reponse[0]) == -1) {
@@ -113,6 +115,7 @@ int actualiser(char* reponse, int indice, Actuel* a) {
   return 1;
 }
 
+/* affiche le mot dans l'etat actuel et renvoie 1 si le mot n'est pas encore trouve 0 sinon */
 int affichage(Actuel a) {
   int i, h;
   h = 0;
@@ -129,6 +132,7 @@ int affichage(Actuel a) {
   return 0;
 }
 
+/* Affiche l'etat actuel du pendu */
 void affichage_pendue(int try) {
   printf("\n");
   if (try == 1) {
@@ -195,6 +199,7 @@ void affichage_pendue(int try) {
   printf("\nLa lettre n'est pas dans le mot, dommage !\n");
 }
 
+/* lit ce que l'utilisateur a ecrit dans le terminal */
 char* lire_ligne() {
   int len = 0;
   char* str;
@@ -218,6 +223,7 @@ char* lire_ligne() {
   return str;
 }
 
+/* Affiche les lettres deja utilisees */
 void affichage_lettre(Actuel a) {
   int i;
   printf("\n\nVoici la(es) lettre(s) déjà utilisée(s):");
@@ -227,16 +233,6 @@ void affichage_lettre(Actuel a) {
   printf(" %c \n\n", a.lettre[i]);
 }
 
-void read_3_char(char* ch) {
-  char* str = malloc(100);
-  strcpy(str, lire_ligne());
-  ch[0] = str[0];
-  ch[1] = str[1];
-  ch[2] = str[2];
-  ch[3] = '\0';
-  free(str);
-}
-
 void espace() {
   printf(
       "\n______________________________________________________________________"
@@ -244,34 +240,36 @@ void espace() {
 }
 
 void client_appli(char* serveur, char* service) {
+
+  // Initialisation des sockets
   int id_socket = h_socket(AF_INET, SOCK_DGRAM);
   struct sockaddr_in *p_adr_serv, *p_adr_distant;
   char myname[17];
-  gethostname(myname, 16);
+  gethostname(myname, 16); // Recupere l'IP de la machine local
   adr_socket(service, myname, SOCK_DGRAM, &p_adr_distant);
   adr_socket(service, SERVEUR_DEFAUT, SOCK_DGRAM, &p_adr_serv);
   h_bind(id_socket, p_adr_serv);
+
+  // Envoi d'une demande d'initialisation du jeu (INIT) au serveur
   char tampon[20];
   tampon[0] = 'I';
   tampon[1] = 'N';
   tampon[2] = 'I';
   tampon[3] = 'T';
   int nb = h_sendto(id_socket, tampon, 4, p_adr_distant);
+
+  // Reception et traitement du message du server qui contient le nombre de lettre touvee 
+  // et leur position pour la lettre teste
   nb = h_recvfrom(id_socket, tampon, 5, NULL);
   int taille = 0;
   for (int i = 0; i < nb; i++) taille = taille * 10 + (int)tampon[i];
-
   buffer = malloc(100);
   setbuf(stdout, NULL);
   int continuer = 1;
   char reponse1[1];
   char* reponse2 = malloc(3);
-  int try
-    , gagner, indice, k, trouver;
-  // initlalize the random generator
-
-  try
-    = 0;
+  int try, gagner, indice, k, trouver;
+  try = 0;
   printf(
       " 	Bonjour est bienvenue dans le jeu du Pendue !\n 	Vous "
       "avez 10 coups pour deviner le mot !\n 	Bonne chance !\n");
@@ -348,24 +346,3 @@ void client_appli(char* serveur, char* service) {
   free(reponse2);
   printf("Au revoir !!!\n");
 }
-
-/*****************************************************************************/
-/* procedure correspondant au traitement du client de votre application */
-
-/*
-void client_appli(char* serveur, char* service)
-
-
-
-{
-  int id_socket = h_socket(AF_INET, SOCK_DGRAM);
-  struct sockaddr_in *p_adr_serv, *p_adr_distant;
-  adr_socket(service, NULL, SOCK_DGRAM, &p_adr_serv);
-  adr_socket(service, SERVEUR_DEFAUT, SOCK_DGRAM, &p_adr_distant);
-  h_bind(id_socket, p_adr_serv);
-  char* tampon = "salut";
-  int nb = h_sendto(id_socket, tampon, 5, p_adr_distant);
-  printf("%d\n", nb);
-}
-*/
-//    /*****************************************************************************/

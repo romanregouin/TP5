@@ -289,7 +289,7 @@ void client_appli(char* serveur, char* service) {
         trouver = trouver * 10 + tampon[k] - '0';
         k++;
       }
-
+      if (k == 0) trouver = 0;
       for (int l = 0; l < trouver; l++) {
         while (tampon[k] == '-') {
           indice = indice * 10 + tampon[k] - '0';

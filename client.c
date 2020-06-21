@@ -292,13 +292,18 @@ void client_appli(char* serveur, char* service) {
         trouver = trouver * 10 + (int)tampon[k];
         k++;
       }
+      k++;
+      printf("Trouver = %d\n", trouver);
       if (k == 0) trouver = 0;
       for (int l = 0; l < trouver; l++) {
+        indice = 0;
         while (tampon[k] != '-') {
           indice = indice * 10 + (int)tampon[k];
           k++;
         }
+        printf("indice = %d \n", indice);
         actualiser(reponse1, indice, &a);
+        k++;
       }
       if (trouver == 0) {
         try

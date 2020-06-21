@@ -94,6 +94,7 @@ int actualiser(int* indices, char* reponse, char* deviner, Actuel* a) {
         a->lettre_bonne[a->bon] = reponse[0];
         a->bon++;
       }
+      printf("j = %d  nbIndice =  %d", j, nbIndices);
       indices[nbIndices] = j;
       nbIndices++;
     }
@@ -142,6 +143,11 @@ void serveur_appli(char* service)
       word = initGame();
       a = init_actuel();
       bufferEmission[0] = (char)string_length(word);
+      printf("Le mot a trouver est :  ");
+      for (int k = 0; k < string_length(word); k++) {
+        printf("%c", word[k]);
+      }
+      printf("\n");
       printf("%d\n", (int)bufferEmission[0]);
       printf("J'envoie un truc\n");
       h_sendto(id_socket, bufferEmission, 1, p_adr_distant);
@@ -175,12 +181,13 @@ void serveur_appli(char* service)
         bufferEmission[writePosition] = '-';
         writePosition++;
         bufferEmission[writePosition] = (char)indices[i];
+        printf("%d \n", indices[i]);
         writePosition++;
       }
       bufferEmission[writePosition] = '-';
     }
     printf("J'envoie un truc\n");
-    h_sendto(id_socket, bufferEmission, writePosition, p_adr_distant);
+    h_sendto(id_socket, bufferEmission, writePosition + 1, p_adr_distant);
   }
 }
 

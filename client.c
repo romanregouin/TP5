@@ -288,14 +288,15 @@ void client_appli(char* serveur, char* service) {
       nb = h_recvfrom(id_socket, tampon, 20, NULL);
       k = 0;
       trouver = 0;
-      while (tampon[k] == '-') {
+      while (tampon[k] != '-') {
         trouver = trouver * 10 + (int)tampon[k];
         k++;
       }
       if (k == 0) trouver = 0;
       for (int l = 0; l < trouver; l++) {
-        while (tampon[k] == '-') {
+        while (tampon[k] != '-') {
           indice = indice * 10 + (int)tampon[k];
+          k++;
         }
         actualiser(reponse1, indice, &a);
       }

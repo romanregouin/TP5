@@ -234,6 +234,7 @@ void read_3_char(char* ch) {
   ch[1] = str[1];
   ch[2] = str[2];
   ch[3] = '\0';
+  free(str);
 }
 
 void espace() {
@@ -256,9 +257,7 @@ void client_appli(char* serveur, char* service) {
   tampon[2] = 'I';
   tampon[3] = 'T';
   int nb = h_sendto(id_socket, tampon, 4, p_adr_distant);
-  printf("Envoi INIT attante réponse\n");
   nb = h_recvfrom(id_socket, tampon, 5, NULL);
-  printf("Reponse reçu\n");
   int taille = 0;
   for (int i = 0; i < nb; i++) taille = taille * 10 + (int)tampon[i];
 
@@ -280,8 +279,9 @@ void client_appli(char* serveur, char* service) {
   while (continuer) {
     Actuel a = init_actuel(taille);
     gagner = affichage(a);
-    printf("?%d", taille);
-    reponse1[0] = lire_ligne()[0];
+    char* tmp = lire_ligne();
+    reponse1[0] = tmp[0];
+    free(tmp);
     a = ajouter_actuel(a, reponse1);
     while (gagner && try <= 10) {
       printf("\n");
@@ -295,7 +295,6 @@ void client_appli(char* serveur, char* service) {
         k++;
       }
       k++;
-      printf("Trouver = %d\n", trouver);
       if (k == 0) trouver = 0;
       for (int l = 0; l < trouver; l++) {
         indice = 0;
@@ -303,7 +302,6 @@ void client_appli(char* serveur, char* service) {
           indice = indice * 10 + (int)tampon[k];
           k++;
         }
-        printf("indice = %d \n", indice);
         actualiser(reponse1, indice, &a);
         k++;
       }
@@ -322,7 +320,9 @@ void client_appli(char* serveur, char* service) {
         do {
           affichage_lettre(a);
           printf("?");
-          reponse1[0] = lire_ligne()[0];
+          char* tmp2 = lire_ligne();
+          reponse1[0] = tmp2[0];
+          free(tmp);
           if (string_index_of(a.lettre, 0, reponse1[0]) != -1) {
             printf("        La lettre a déjà été donné !\n");
           }
@@ -331,47 +331,21 @@ void client_appli(char* serveur, char* service) {
       a = ajouter_actuel(a, reponse1);
     }
     if (try <= 10) {
-      printf(
-          " 	Bravo, vous avez gagné !!!!  \n 	Pour relancer une "
-          "partie taper 'oui' sinon taper 'non'\n");
+      printf(" 	Bravo, vous avez gagné !!!! \n");
     } else {
       printf(
           "	 Dommage vous avez dépassé les 10 essaies ! C'est perdu pour "
-          "cette fois !\n         Pour relancer une partie taper 'oui' sinon "
-          "taper 'non'\n");
+          "cette fois !\n ");
     }
-    do {
-      read_3_char(reponse2);
-      if (strcmp(reponse2, "non") == 0) {
-        continuer = 0;
-      } else if (strcmp(reponse2, "oui") == 0) {
-        tampon[0] = 'I';
-        tampon[1] = 'N';
-        tampon[2] = 'I';
-        tampon[3] = 'T';
-        nb = h_sendto(id_socket, tampon, 4, p_adr_distant);
-        nb = h_recvfrom(id_socket, tampon, 5, p_adr_distant);
-        int taille = 0;
-        for (int i = 0; i < nb; i++) taille = taille * 10 + (int)tampon[i];
-        gagner = 1;
-        try
-          = 0;
-        free(a.lettre);
-        free(a.lettre_bonne);
-        free(a.mot);
-        printf("	C'est repartie pour un tour !!\n");
-      } else {
-        printf(
-            "        Il faut taper 'oui' pour relancer ou taper 'non' pour "
-            "arreter.\n");
-      }
-    } while ((strcmp(reponse2, "oui") != 0) && (strcmp(reponse2, "non") != 0));
+    continuer = 0;
   }
   tampon[0] = 'E';
   tampon[1] = 'N';
   tampon[2] = 'D';
   nb = h_sendto(id_socket, tampon, 3, p_adr_distant);
   h_close(id_socket);
+  free(buffer);
+  free(reponse2);
   printf("Au revoir !!!\n");
 }
 

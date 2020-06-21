@@ -2,7 +2,7 @@ all: string.o pendu.o exe client.o serveur.o client serveur
 
 
 clean:
-	-rm pendue.o string.o exe client serveur
+	-rm *.o exe client serveur
 
 pendu.o: pendu.c string.h
 	gcc -g -c pendu.c -o pendue.o

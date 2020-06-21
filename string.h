@@ -54,5 +54,6 @@ int string_index_of(char *dst, int offset, char ch);
 /*void string_substring(char* dst, int doff, char *src, int offset, int length) {
 }*/
 
+int myStringCmp(char* s1, char* s2);
 
 #endif

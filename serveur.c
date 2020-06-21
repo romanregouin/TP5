@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <sys/signal.h>
 #include <sys/wait.h>
+#include "string.h"
 
 #include "fon.h" /* Primitives de la boite a outils */
 
@@ -24,6 +25,7 @@
 #define Max 10
 #define Try 10
 #define STDIN 1
+#define NB_MOTS 10
 
 void serveur_appli(char* service); /* programme serveur */
 
@@ -82,15 +84,18 @@ Actuel ajouter_actuel(Actuel a, char* c) {
   return a;
 }
 
-int actualiser(char* reponse, char* deviner, Actuel* a) {
+int actualiser(int* indices, char* reponse, char* deviner, Actuel* a) {
   int j;
+  int nbIndices = 0;
   for (j = 0; j < string_length(deviner); j++) {
     if (reponse[0] == deviner[j]) {
       if (string_index_of(a->lettre_bonne, 0, reponse[0]) == -1) {
         a->lettre_bonne[a->bon] = reponse[0];
         a->bon++;
+        indices[nbIndices] = j;
+        nbIndices++;
       }
-      return 1;
+      return nbIndices;
     }
   }
   return -1;
@@ -128,89 +133,15 @@ int read_3_char(char* ch) {
   ch[3] = '\0';
 }
 
-int main(int nargs, char** args) {
-  buffer = malloc(100);
-  setbuf(stdout, NULL);
-  int continuer = 1;
-  char reponse1[1];
-  char* reponse2 = malloc(3);
-  int random, try
-    , gagner;
+char* initGame(){
   char* deviner = malloc(Max);
-  // initlalize the random generator
   srand(clock());
-  char* d[10] = {"savon",    "papillon", "xilophone", "tulukmatou", "nathan",
+  char* d[NB_MOTS] = {"savon",    "papillon", "xilophone", "tulukmatou", "nathan",
                  "rigolade", "saumon",   "pecule",    "yo",         "kayak"};
-  try
-    = 0;
-  printf(
-      " 	Bonjour est bienvenue dans le jeu du Pendue !\n 	Vous "
-      "avez 10 coups pour deviner le mot !\n 	Bonne chance !\n");
-  random = rand() % 10;
+  int try = 0;
+  int random = rand() % NB_MOTS;
   string_copy(deviner, d[random]);
-  gagner = 1;
-  while (continuer) {
-    Actuel a = init_actuel();
-    gagner = affichage(a, deviner);
-    printf("?");
-    reponse1[0] = lire_ligne()[0];
-    a = ajouter_actuel(a, reponse1);
-    while (gagner && try <= 10) {
-      printf("\n");
-      if (actualiser(reponse1, deviner, &a) == 1) {
-        gagner = affichage(a, deviner);
-        printf("	Vous avez trouvez une lettre !\n");
-      } else {
-        try
-          ++;
-        gagner = affichage(a, deviner);
-        affichage_pendue(try);
-      }
-      espace();
-      if (gagner == 1 && try < 10) {
-        do {
-          affichage_lettre(a);
-          printf("?");
-          reponse1[0] = lire_ligne()[0];
-          if (string_index_of(a.lettre, 0, reponse1[0]) != -1) {
-            printf("        La lettre a déjà été donné !\n");
-          }
-        } while (string_index_of(a.lettre, 0, reponse1[0]) != -1);
-      }
-      a = ajouter_actuel(a, reponse1);
-    }
-    if (try <= 10) {
-      printf(
-          " 	Bravo, vous avez gagné !!!!  \n 	Pour relancer une "
-          "partie taper 'oui' sinon taper 'non'\n");
-    } else {
-      printf(
-          "	 Dommage vous avez dépassé les 10 essaies ! C'est perdu pour "
-          "cette fois !\n         Pour relancer une partie taper 'oui' sinon "
-          "taper 'non'\n");
-    }
-    do {
-      read_3_char(reponse2);
-      if (strcmp(reponse2, "non") == 0) {
-        continuer = 0;
-      } else if (strcmp(reponse2, "oui") == 0) {
-        random = rand() % 10;
-        string_copy(deviner, d[random]);
-        gagner = 1;
-        try
-          = 0;
-        free(a.lettre);
-        free(a.lettre_bonne);
-        printf("	C'est repartie pour un tour !!\n");
-      } else {
-        printf(
-            "        Il faut taper 'oui' pour relancer ou taper 'non' pour "
-            "arreter.\n");
-      }
-    } while ((strcmp(reponse2, "oui") != 0) && (strcmp(reponse2, "non") != 0));
-  }
-  printf("Au revoir !!!\n");
-  return 0;
+  return deviner;
 }
 
 /******************************************************************************/
@@ -220,18 +151,52 @@ void serveur_appli(char* service)
 
 {
   struct sockaddr_in *p_adr_serv, *p_adr_distant;
+  int started = 0;
+  int ended = 0;
+  int try = 0;
   int id_socket = h_socket(AF_INET, SOCK_DGRAM);
   adr_socket(service, NULL, SOCK_DGRAM, &p_adr_distant);
   adr_socket(service, SERVEUR_DEFAUT, SOCK_DGRAM, &p_adr_serv);
   h_bind(id_socket, p_adr_serv);
-  char tampon[5];
-  int nb = h_recvfrom(id_socket, tampon, 5, p_adr_distant);
-  for (int i = 0; i < nb; i++) {
-    printf("%c", tampon[i]);
+  char bufferReception[4];
+  char bufferEmission[20];
+  char* word;
+  Actuel a;
+  int* indices = malloc(10*sizeof(int));
+  int nb = h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
+  int nbIndices = 0;
+  while(!started){
+    if(myStringCmp(bufferReception,"INIT")){
+      word = initGame();
+      a = init_actuel();
+      started++;
+    }else{
+      nb = h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
+    }
   }
-  printf("\n");
-
-  /* a completer .....  */
+  while(1){
+    nb = h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
+    if(myStringCmp(bufferReception, "END")){
+      h_close(id_socket);
+      return;
+    }
+    a = ajouter_actuel(a, bufferReception[0]);
+    nbIndices = actualiser(indices,bufferReception[0], word, &a);
+    if(nbIndices==-1){
+      bufferEmission[0] = 0;
+      bufferEmission[1] = 1;
+    }else{
+      bufferEmission[0] = nbIndices;
+      int writePosition = 1;
+      for(int i=0;i<nbIndices;i++){
+        bufferEmission[writePosition] = '-';
+        writePosition++;
+        bufferEmission[writePosition] = indices[i];
+        writePosition++;
+      }
+      bufferEmission[writePosition] = '-';
+    }
+  }
 }
 
 /******************************************************************************/

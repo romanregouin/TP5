@@ -6,7 +6,8 @@
 /*									      */
 /******************************************************************************/
 /*									      */
-/*		Auteurs : REGOUIN Roman ANDRIEUX Liam 					*/
+/*		Auteurs : REGOUIN Roman ANDRIEUX Liam
+ */
 /*									      */
 /******************************************************************************/
 
@@ -74,22 +75,27 @@ int read_char(char* ch) { return read(STDIN, ch, 1); }
 
 /* Structure qui contient l'etat actuel du mot à trouver */
 typedef struct {
-  char* mot;
-  char* lettre;
-  char* lettre_bonne;
-  int try;
-  int bon;
-  int nb;
+  char* mot;  // Tableau qui contient le mot a trouver (il sera initialisé avec
+              // des '0')
+  char* lettre;  // tableau contenant la liste de toutes les lettres données par
+                 // le joueur
+  char* lettre_bonne;  // tableau contenant la liste des lettres bonnes trouvés
+  int try
+    ;       // le nombre de lettre donné
+  int bon;  // le nombre de lettre bonne trouvé
+  int nb;   // la taille du mot a trouvé
 } Actuel;
 
 /* Initialise la strucutre */
+// taille: Sert a initialisé la taille du mot a trouvé
 Actuel init_actuel(int taille) {
   Actuel a;
   a.mot = malloc(sizeof(char) * taille);
   for (int i = 0; i < taille; i++) a.mot[i] = '0';
   a.lettre = malloc(sizeof(char) * Max);
   a.lettre_bonne = malloc(sizeof(char) * Max);
-  a.try = 0;
+  a.try
+    = 0;
   a.bon = 0;
   a.nb = taille;
   return a;
@@ -98,13 +104,14 @@ Actuel init_actuel(int taille) {
 /* Actualise les essaies et les lettres qui ont été utilises */
 Actuel ajouter_actuel(Actuel a, char* c) {
   a.lettre[a.try] = c[0];
-  a.try ++;
+  a.try
+    ++;
   return a;
 }
 
-/* Prend une lettre reponse et actualise l'avancement du mot cherché via la structure a 
-et met a jour le tableau indices avec les indices des occurences de la lettre dans le mot 
-cherché et renvoie ce nombre d'occurence */
+/* Prend une lettre reponse et actualise l'avancement du mot cherché via la
+structure a et met a jour le tableau indices avec les indices des occurences de
+la lettre dans le mot cherché et renvoie ce nombre d'occurence */
 int actualiser(char* reponse, int indice, Actuel* a) {
   if (indice == -1) return -1;
   if (string_index_of(a->lettre_bonne, 0, reponse[0]) == -1) {
@@ -115,7 +122,8 @@ int actualiser(char* reponse, int indice, Actuel* a) {
   return 1;
 }
 
-/* affiche le mot dans l'etat actuel et renvoie 1 si le mot n'est pas encore trouve 0 sinon */
+/* affiche le mot dans l'etat actuel et renvoie 1 si le mot n'est pas encore
+ * trouve 0 sinon */
 int affichage(Actuel a) {
   int i, h;
   h = 0;
@@ -240,12 +248,11 @@ void espace() {
 }
 
 void client_appli(char* serveur, char* service) {
-
   // Initialisation des sockets
   int id_socket = h_socket(AF_INET, SOCK_DGRAM);
   struct sockaddr_in *p_adr_serv, *p_adr_distant;
   char myname[17];
-  gethostname(myname, 16); // Recupere l'IP de la machine local
+  gethostname(myname, 16);  // Recupere l'IP de la machine local
   adr_socket(service, myname, SOCK_DGRAM, &p_adr_distant);
   adr_socket(service, SERVEUR_DEFAUT, SOCK_DGRAM, &p_adr_serv);
   h_bind(id_socket, p_adr_serv);
@@ -258,51 +265,74 @@ void client_appli(char* serveur, char* service) {
   tampon[3] = 'T';
   int nb = h_sendto(id_socket, tampon, 4, p_adr_distant);
 
-  // Reception et traitement du message du server qui contient le nombre de lettre touvee 
-  // et leur position pour la lettre teste
+  // Reception et traitement du message du server qui contient le nombre de
+  // lettre touvee et leur position pour la lettre teste
   nb = h_recvfrom(id_socket, tampon, 5, NULL);
+
+  // On recupère dans le tampon la taille du mot mystere
   int taille = 0;
-  for (int i = 0; i < nb; i++) taille = taille * 10 + (int)tampon[i];
+  for (int i = 0; i < nb; i++) taille = (int)tampon[i];
+
+  // Initialisation des variables utilisé pour l'application client et la
+  // récupération des lettres dans le terminal
   buffer = malloc(100);
   setbuf(stdout, NULL);
   int continuer = 1;
   char reponse1[1];
   char* reponse2 = malloc(3);
-  int try, gagner, indice, k, trouver;
-  try = 0;
+  int try
+    , gagner, indice, k, trouver;
+  try
+    = 0;
   printf(
       " 	Bonjour est bienvenue dans le jeu du Pendue !\n 	Vous "
       "avez 10 coups pour deviner le mot !\n 	Bonne chance !\n");
   gagner = 1;
   while (continuer) {
+    // On initialise la structure qui permet de savoir où on en est dans le jeu
     Actuel a = init_actuel(taille);
+    // On affiche le mot avec aucune lettre encore trouvé
     gagner = affichage(a);
+    // On récupere ce que le joueur écrit dans le terminal
     char* tmp = lire_ligne();
+    // On ne va utiliser que la première lettre donné par le joueur
     reponse1[0] = tmp[0];
     free(tmp);
+    // On met a jour notre structure pour se souvenir des lettres dejà utilisé
     a = ajouter_actuel(a, reponse1);
     while (gagner && try <= 10) {
       printf("\n");
-
+      // On envoie la réponse du joueur au serveur
       nb = h_sendto(id_socket, reponse1, 1, p_adr_distant);
+      // On recupere le Traitement du Serveur au format (<Nombre de lettre
+      // présent dans le mot> - <indice de la 1ere lettre> - ... - <indice de la
+      // nieme lettre> -)
       nb = h_recvfrom(id_socket, tampon, 20, NULL);
       k = 0;
       trouver = 0;
+      // On va donc traiter le format de réponse pour mettre a jour la structure
+      // du jeu Ce premier while permet de récupérer le nombre de lettre
+      // présente dans le mot
       while (tampon[k] != '-') {
         trouver = trouver * 10 + (int)tampon[k];
         k++;
       }
       k++;
+      // Si aucune lettre présente on arrete
       if (k == 0) trouver = 0;
+      // Sinon on continue de parcourir le message en récupérant les indices
       for (int l = 0; l < trouver; l++) {
         indice = 0;
         while (tampon[k] != '-') {
           indice = indice * 10 + (int)tampon[k];
           k++;
         }
+        // C'est ici qu'on met a jour le mot avec les lettres connues
         actualiser(reponse1, indice, &a);
         k++;
       }
+      // Si la lettre est pas présente on incrémente le nombre de rater et on
+      // affiche l'etat actuel du mot mystere
       if (trouver == 0) {
         try
           ++;
@@ -314,6 +344,9 @@ void client_appli(char* serveur, char* service) {
       }
 
       espace();
+
+      // Si le joueur n'a pas encore perdu ou gagner on lui demande une nouvelle
+      // lettre
       if (gagner == 1 && try < 10) {
         do {
           affichage_lettre(a);
@@ -328,6 +361,7 @@ void client_appli(char* serveur, char* service) {
       }
       a = ajouter_actuel(a, reponse1);
     }
+    // Ici on a quitter le while donc on a soit gagner ou perdu la partie
     if (try <= 10) {
       printf(" 	Bravo, vous avez gagné !!!! \n");
     } else {
@@ -337,6 +371,8 @@ void client_appli(char* serveur, char* service) {
     }
     continuer = 0;
   }
+  // Maintenant que la partie est terminé on prévient le serveur de la fin de
+  // partie et on ferme la socket
   tampon[0] = 'E';
   tampon[1] = 'N';
   tampon[2] = 'D';

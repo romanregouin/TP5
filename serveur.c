@@ -56,14 +56,19 @@ void serveur_appli(char *service)
 /* Procedure correspondant au traitement du serveur de votre application */
 
 {
-  int id_socket = h_socket(AF_INET, SOCK_DGRAM);
   struct sockaddr_in *p_adr_serv, *p_adr_distant;
-  adr_socket(service, NULL, SOCK_DGRAM, &p_adr_serv);
-  adr_socket(service, SERVEUR_DEFAUT, SOCK_DGRAM, &p_adr_distant);
+  int id_socket = h_socket(AF_INET, SOCK_DGRAM);
+  adr_socket(service, NULL, SOCK_DGRAM, &p_adr_distant);
+  adr_socket(service, SERVEUR_DEFAUT, SOCK_DGRAM, &p_adr_serv);
   h_bind(id_socket, p_adr_serv);
-  char *tampon = "salut";
-  int nb = h_sendto(id_socket, tampon, 5, p_adr_distant);
-  printf("%d\n", nb);
+  char tampon[5];
+  int nb = h_recvfrom(id_socket, tampon, 5, p_adr_distant);
+  for (int i = 0; i < nb; i++) {
+    printf("%c", tampon[i]);
+  }
+  printf("\n");
+
+  /* a completer .....  */
 }
 
 /******************************************************************************/

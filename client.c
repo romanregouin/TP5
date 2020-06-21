@@ -63,19 +63,14 @@ void client_appli(char *serveur, char *service)
 /* procedure correspondant au traitement du client de votre application */
 
 {
-  struct sockaddr_in *p_adr_serv, *p_adr_distant;
   int id_socket = h_socket(AF_INET, SOCK_DGRAM);
-  adr_socket(service, NULL, SOCK_DGRAM, &p_adr_distant);
-  adr_socket(service, serveur, SOCK_DGRAM, &p_adr_serv);
+  struct sockaddr_in *p_adr_serv, *p_adr_distant;
+  adr_socket(service, NULL, SOCK_DGRAM, &p_adr_serv);
+  adr_socket(service, SERVEUR_DEFAUT, SOCK_DGRAM, &p_adr_distant);
   h_bind(id_socket, p_adr_serv);
-  char tampon[5];
-  int nb = h_recvfrom(id_socket, tampon, 5, p_adr_distant);
-  for (int i = 0; i < nb; i++) {
-    printf("%c", tampon[i]);
-  }
-  printf("\n");
-
-  /* a completer .....  */
+  char *tampon = "salut";
+  int nb = h_sendto(id_socket, tampon, 5, p_adr_distant);
+  printf("%d\n", nb);
 }
 
 /*****************************************************************************/

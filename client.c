@@ -27,7 +27,7 @@
 #include "string.h"
 
 #define SERVICE_DEFAUT "1111"
-#define SERVEUR_CLIENT "192.168.1.21"
+#define SERVEUR_CLIENT "192.168.1.16"
 #define SERVEUR_DEFAUT "127.0.0.1"
 #define Max 10
 #define Try 10

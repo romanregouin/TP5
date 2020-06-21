@@ -1,4 +1,4 @@
-all: string.o pendu.o exe
+all: string.o pendu.o exe client.o serveur.o client serveur
 
 
 clean:
@@ -10,5 +10,20 @@ pendu.o: pendu.c string.h
 string.o: string.c string.h
 	gcc -g -c string.c -o string.o
 
+client.o: client.c fon.h
+	gcc -Wall -Werror -c client.c -o client.o
+
+serveur.o: serveur.c fon.h
+	gcc -Wall -Werror -c serveur.c -o serveur.o
+
+fon.o: fon.c fon.h
+	gcc  -c fon.c -o fon.o
+
 exe: pendu.o string.o
 	gcc -g pendue.o string.o -o exe
+
+client: client.o fon.o
+	gcc -g fon.o client.o -o client
+
+serveur: serveur.o fon.o
+	gcc -g fon.o serveur.o -o serveur

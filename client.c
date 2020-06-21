@@ -10,7 +10,7 @@
 /*									      */
 /******************************************************************************/
 
-#include <curses.h> /* Primitives de gestion d'ecran */
+//#include <curses.h> /* Primitives de gestion d'ecran */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/signal.h>
@@ -63,9 +63,17 @@ void client_appli(char *serveur, char *service)
 /* procedure correspondant au traitement du client de votre application */
 
 {
-  struct sockaddr_in *p_adr_serv;
+  struct sockaddr_in *p_adr_serv, *p_adr_distant;
+  int id_socket = h_socket(AF_INET, SOCK_DGRAM);
+  adr_socket(service, NULL, SOCK_DGRAM, &p_adr_distant);
   adr_socket(service, serveur, SOCK_DGRAM, &p_adr_serv);
-  h_bind(h_socket(AF_INET, SOCK_DGRAM), p_adr_serv);
+  h_bind(id_socket, p_adr_serv);
+  char tampon[5];
+  int nb = h_recvfrom(id_socket, tampon, 5, p_adr_distant);
+  for (int i = 0; i < nb; i++) {
+    printf("%c", tampon[i]);
+  }
+  printf("\n");
 
   /* a completer .....  */
 }

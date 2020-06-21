@@ -94,7 +94,7 @@ int actualiser(int* indices, char* reponse, char* deviner, Actuel* a) {
         a->lettre_bonne[a->bon] = reponse[0];
         a->bon++;
       }
-      printf("j = %d  nbIndice =  %d", j, nbIndices);
+      printf("position lettre : %d\n",j);
       indices[nbIndices] = j;
       nbIndices++;
     }
@@ -131,13 +131,13 @@ void serveur_appli(char* service)
   char* word;
   Actuel a;
   int* indices = malloc(10 * sizeof(int));
+  int nbIndices = 0;
   int nb = h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
   printf("J'ai recu\n");
   for (int i = 0; i < nb; i++) {
     printf("%c", bufferReception[i]);
   }
   printf("\n");
-  int nbIndices = 0;
   while (!started) {
     if (myStringCmp(bufferReception, "INIT")) {
       word = initGame();
@@ -162,13 +162,14 @@ void serveur_appli(char* service)
     for (int i = 0; i < nb; i++) {
       printf("%c", bufferReception[i]);
     }
+    printf("\n");
     if (myStringCmp(bufferReception, "END")) {
       h_close(id_socket);
       return;
     }
     a = ajouter_actuel(a, bufferReception);
     nbIndices = actualiser(indices, bufferReception, word, &a);
-    printf("NBindice = %d\n", nbIndices);
+    printf("Nombre de lettre trouvées : %d\n", nbIndices);
     int writePosition = 0;
     if (nbIndices == 0) {
       bufferEmission[writePosition] = 0;

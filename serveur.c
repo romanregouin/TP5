@@ -131,7 +131,7 @@ void serveur_appli(char* service)
   int* indices = malloc(10*sizeof(int));
   int nb = h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
   for(int i=0;i<nb;i++){
-    printf("%c",bufferEmission[i]);
+    printf("%c",bufferReception[i]);
   }
   printf("\n");
   int nbIndices = 0;
@@ -147,7 +147,10 @@ void serveur_appli(char* service)
     }
   }
   while(1){
-    h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
+    nb = h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
+    for(int i=0;i<nb;i++){
+      printf("%c",bufferReception[i]);
+    }
     if(myStringCmp(bufferReception, "END")){
       h_close(id_socket);
       return;

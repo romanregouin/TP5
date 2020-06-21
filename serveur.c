@@ -130,13 +130,13 @@ void serveur_appli(char* service)
   char* word;
   Actuel a;
   int* indices = malloc(10 * sizeof(int));
+  int nbIndices = 0;
   int nb = h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
   printf("Init client reçu\n");
   for (int i = 0; i < nb; i++) {
     printf("%c", bufferReception[i]);
   }
   printf("\n");
-  int nbIndices = 0;
   while (!started) {
     if (myStringCmp(bufferReception, "INIT")) {
       word = initGame();

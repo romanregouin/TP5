@@ -2,7 +2,7 @@ all: string.o pendu.o exe client.o serveur.o client serveur
 
 
 clean:
-	-rm pendue.o string.o exe
+	-rm pendue.o string.o exe client serveur
 
 pendu.o: pendu.c string.h
 	gcc -g -c pendu.c -o pendue.o
@@ -23,7 +23,7 @@ exe: pendu.o string.o
 	gcc -g pendue.o string.o -o exe
 
 client: client.o fon.o string.o
-	gcc -g fon.o client.o -o client
+	gcc -g fon.o client.o string.o -o client
 
 serveur: serveur.o fon.o string.o
-	gcc -g fon.o serveur.o -o serveur
+	gcc -g fon.o serveur.o string.o -o serveur

@@ -17,9 +17,9 @@
 #include <sys/signal.h>
 #include <sys/wait.h>
 #include <time.h>
-#include "string.h"
 
 #include "fon.h" /* Primitives de la boite a outils */
+#include "string.h"
 
 #define SERVICE_DEFAUT "1111"
 #define SERVEUR_DEFAUT "127.0.0.1"
@@ -102,11 +102,12 @@ int actualiser(int* indices, char* reponse, char* deviner, Actuel* a) {
   return -1;
 }
 
-char* initGame(){
+char* initGame() {
   char* deviner = malloc(Max);
   srand(clock());
-  char* d[NB_MOTS] = {"savon",    "papillon", "xilophone", "tulukmatou", "nathan",
-                 "rigolade", "saumon",   "pecule",    "yo",         "kayak"};
+  char* d[NB_MOTS] = {"savon",  "papillon", "xilophone", "tulukmatou",
+                      "nathan", "rigolade", "saumon",    "pecule",
+                      "yo",     "kayak"};
   int random = rand() % NB_MOTS;
   string_copy(deviner, d[random]);
   return deviner;
@@ -128,35 +129,42 @@ void serveur_appli(char* service)
   char bufferEmission[20];
   char* word;
   Actuel a;
-  int* indices = malloc(10*sizeof(int));
-  h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
+  int* indices = malloc(10 * sizeof(int));
+  int nb = h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
+  for (int i = 0; i < nb; i++) {
+    printf("%c", bufferReception[i]);
+  }
+  printf("\n");
   int nbIndices = 0;
-  while(!started){
-    if(myStringCmp(bufferReception,"INIT")){
+  while (!started) {
+    if (myStringCmp(bufferReception, "INIT")) {
       word = initGame();
       a = init_actuel();
+      bufferEmission[0] = string_length(word);
+      printf("J'envoie un truc\n");
+      h_sendto(id_socket, bufferEmission, 1, p_adr_distant);
       started++;
-    }else{
+    } else {
       h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
     }
   }
-  while(1){
+  while (1) {
     h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
-    if(myStringCmp(bufferReception, "END")){
+    if (myStringCmp(bufferReception, "END")) {
       h_close(id_socket);
       return;
     }
     a = ajouter_actuel(a, bufferReception);
-    nbIndices = actualiser(indices,bufferReception, word, &a);
+    nbIndices = actualiser(indices, bufferReception, word, &a);
     int writePosition = 0;
-    if(nbIndices==-1){
+    if (nbIndices == -1) {
       bufferEmission[writePosition] = 0;
       writePosition++;
       bufferEmission[writePosition] = 1;
-    }else{
+    } else {
       bufferEmission[writePosition] = nbIndices;
       writePosition++;
-      for(int i=0;i<nbIndices;i++){
+      for (int i = 0; i < nbIndices; i++) {
         bufferEmission[writePosition] = '-';
         writePosition++;
         bufferEmission[writePosition] = indices[i];

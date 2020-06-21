@@ -245,7 +245,9 @@ void espace() {
 void client_appli(char* serveur, char* service) {
   int id_socket = h_socket(AF_INET, SOCK_DGRAM);
   struct sockaddr_in *p_adr_serv, *p_adr_distant;
-  adr_socket(service, SERVEUR_CLIENT, SOCK_DGRAM, &p_adr_distant);
+  char myname[17];
+  gethostname(myname, 16);
+  adr_socket(service, myname, SOCK_DGRAM, &p_adr_distant);
   adr_socket(service, SERVEUR_DEFAUT, SOCK_DGRAM, &p_adr_serv);
   h_bind(id_socket, p_adr_serv);
   char tampon[20];

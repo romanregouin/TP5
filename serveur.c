@@ -93,13 +93,12 @@ int actualiser(int* indices, char* reponse, char* deviner, Actuel* a) {
       if (string_index_of(a->lettre_bonne, 0, reponse[0]) == -1) {
         a->lettre_bonne[a->bon] = reponse[0];
         a->bon++;
-        indices[nbIndices] = j;
-        nbIndices++;
       }
-      return nbIndices;
+      indices[nbIndices] = j;
+      nbIndices++;
     }
   }
-  return -1;
+  return nbIndices;
 }
 
 char* initGame() {
@@ -119,11 +118,12 @@ void serveur_appli(char* service)
 /* Procedure correspondant au traitement du serveur de votre application */
 
 {
-  struct sockaddr_in *p_adr_serv, *p_adr_distant;
+  struct sockaddr_in *p_adr_serv,
+      *p_adr_distant = malloc(sizeof(struct sockaddr_in));
   int started = 0;
   int id_socket = h_socket(AF_INET, SOCK_DGRAM);
-  adr_socket(service, NULL, SOCK_DGRAM, &p_adr_distant);
-  adr_socket(service, SERVEUR_DEFAUT, SOCK_DGRAM, &p_adr_serv);
+  adr_socket(service, NULL, SOCK_DGRAM, &p_adr_serv);
+
   h_bind(id_socket, p_adr_serv);
   char bufferReception[4];
   char bufferEmission[20];
@@ -131,6 +131,7 @@ void serveur_appli(char* service)
   Actuel a;
   int* indices = malloc(10 * sizeof(int));
   int nb = h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
+  printf("J'ai recu\n");
   for (int i = 0; i < nb; i++) {
     printf("%c", bufferReception[i]);
   }
@@ -140,7 +141,8 @@ void serveur_appli(char* service)
     if (myStringCmp(bufferReception, "INIT")) {
       word = initGame();
       a = init_actuel();
-      bufferEmission[0] = string_length(word);
+      bufferEmission[0] = (char)string_length(word);
+      printf("%d\n", (int)bufferEmission[0]);
       printf("J'envoie un truc\n");
       h_sendto(id_socket, bufferEmission, 1, p_adr_distant);
       started++;
@@ -149,29 +151,35 @@ void serveur_appli(char* service)
     }
   }
   while (1) {
-    h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
+    nb = h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
+    printf("J'ai recu\n");
+    for (int i = 0; i < nb; i++) {
+      printf("%c", bufferReception[i]);
+    }
     if (myStringCmp(bufferReception, "END")) {
       h_close(id_socket);
       return;
     }
     a = ajouter_actuel(a, bufferReception);
     nbIndices = actualiser(indices, bufferReception, word, &a);
+    printf("NBindice = %d\n", nbIndices);
     int writePosition = 0;
-    if (nbIndices == -1) {
+    if (nbIndices == 0) {
       bufferEmission[writePosition] = 0;
       writePosition++;
-      bufferEmission[writePosition] = 1;
+      bufferEmission[writePosition] = '-';
     } else {
-      bufferEmission[writePosition] = nbIndices;
+      bufferEmission[writePosition] = (char)nbIndices;
       writePosition++;
       for (int i = 0; i < nbIndices; i++) {
         bufferEmission[writePosition] = '-';
         writePosition++;
-        bufferEmission[writePosition] = indices[i];
+        bufferEmission[writePosition] = (char)indices[i];
         writePosition++;
       }
       bufferEmission[writePosition] = '-';
     }
+    printf("J'envoie un truc\n");
     h_sendto(id_socket, bufferEmission, writePosition, p_adr_distant);
   }
 }

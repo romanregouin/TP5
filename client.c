@@ -27,6 +27,7 @@
 #include "string.h"
 
 #define SERVICE_DEFAUT "1111"
+#define SERVEUR_CLIENT "192.168.1.21"
 #define SERVEUR_DEFAUT "127.0.0.1"
 #define Max 10
 #define Try 10
@@ -244,8 +245,8 @@ void espace() {
 void client_appli(char* serveur, char* service) {
   int id_socket = h_socket(AF_INET, SOCK_DGRAM);
   struct sockaddr_in *p_adr_serv, *p_adr_distant;
-  adr_socket(service, NULL, SOCK_DGRAM, &p_adr_serv);
-  adr_socket(service, SERVEUR_DEFAUT, SOCK_DGRAM, &p_adr_distant);
+  adr_socket(service, SERVEUR_CLIENT, SOCK_DGRAM, &p_adr_distant);
+  adr_socket(service, SERVEUR_DEFAUT, SOCK_DGRAM, &p_adr_serv);
   h_bind(id_socket, p_adr_serv);
   char tampon[20];
   tampon[0] = 'I';
@@ -254,10 +255,10 @@ void client_appli(char* serveur, char* service) {
   tampon[3] = 'T';
   int nb = h_sendto(id_socket, tampon, 4, p_adr_distant);
   printf("Envoi INIT attante réponse\n");
-  nb = h_recvfrom(id_socket, tampon, 5, p_adr_distant);
+  nb = h_recvfrom(id_socket, tampon, 5, NULL);
   printf("Reponse reçu\n");
   int taille = 0;
-  for (int i = 0; i < nb; i++) taille = taille * 10 + tampon[i] - '0';
+  for (int i = 0; i < nb; i++) taille = taille * 10 + (int)tampon[i];
 
   buffer = malloc(100);
   setbuf(stdout, NULL);
@@ -277,24 +278,24 @@ void client_appli(char* serveur, char* service) {
   while (continuer) {
     Actuel a = init_actuel(taille);
     gagner = affichage(a);
-    printf("?");
+    printf("?%d", taille);
     reponse1[0] = lire_ligne()[0];
     a = ajouter_actuel(a, reponse1);
     while (gagner && try <= 10) {
       printf("\n");
 
       nb = h_sendto(id_socket, reponse1, 1, p_adr_distant);
-      nb = h_recvfrom(id_socket, tampon, 20, p_adr_distant);
+      nb = h_recvfrom(id_socket, tampon, 20, NULL);
       k = 0;
       trouver = 0;
       while (tampon[k] == '-') {
-        trouver = trouver * 10 + tampon[k] - '0';
+        trouver = trouver * 10 + (int)tampon[k];
         k++;
       }
       if (k == 0) trouver = 0;
       for (int l = 0; l < trouver; l++) {
         while (tampon[k] == '-') {
-          indice = indice * 10 + tampon[k] - '0';
+          indice = indice * 10 + (int)tampon[k];
         }
         actualiser(reponse1, indice, &a);
       }
@@ -343,7 +344,7 @@ void client_appli(char* serveur, char* service) {
         nb = h_sendto(id_socket, tampon, 4, p_adr_distant);
         nb = h_recvfrom(id_socket, tampon, 5, p_adr_distant);
         int taille = 0;
-        for (int i = 0; i < nb; i++) taille = taille * 10 + tampon[i] - '0';
+        for (int i = 0; i < nb; i++) taille = taille * 10 + (int)tampon[i];
         gagner = 1;
         try
           = 0;

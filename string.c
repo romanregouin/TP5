@@ -103,7 +103,11 @@ int string_index_of(char* dst, int offset, char ch) {
 // renvoie 1 si s2 est contenue dans s1 en partant du début;
 int myStringCmp(char* s1, char* s2) {
   int l1, l2;
+  l1 = string_length(s1);
   l2 = string_length(s2);
+  if (l1 < l2) {
+    return 0;
+  }
   for (int i = 0; i < l2; i++) {
     if (s1[i] != s2[i]) {
       return 0;

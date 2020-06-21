@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <sys/signal.h>
 #include <sys/wait.h>
+#include <time.h>
 #include "string.h"
 
 #include "fon.h" /* Primitives de la boite a outils */
@@ -101,44 +102,11 @@ int actualiser(int* indices, char* reponse, char* deviner, Actuel* a) {
   return -1;
 }
 
-char* lire_ligne() {
-  int len = 0;
-  char* str;
-  char ch;
-  do {
-    if (len >= 100) break;
-    if (read_char(&ch) != 1) {
-      if (len == 0) return " ";
-      break;
-    }
-    buffer[len] = ch;
-    len = len + 1;
-  } while (ch != '\n');
-
-  len = len - 1;
-  buffer[len] = '\0';
-
-  str = malloc(len + 1);
-  for (int i = 0; i <= len; i++) str[i] = buffer[i];
-  if (len == 0 && str[0] == '\0') str[0] = ' ';
-  return str;
-}
-
-int read_3_char(char* ch) {
-  char* str = malloc(100);
-  strcpy(str, lire_ligne());
-  ch[0] = str[0];
-  ch[1] = str[1];
-  ch[2] = str[2];
-  ch[3] = '\0';
-}
-
 char* initGame(){
   char* deviner = malloc(Max);
   srand(clock());
   char* d[NB_MOTS] = {"savon",    "papillon", "xilophone", "tulukmatou", "nathan",
                  "rigolade", "saumon",   "pecule",    "yo",         "kayak"};
-  int try = 0;
   int random = rand() % NB_MOTS;
   string_copy(deviner, d[random]);
   return deviner;
@@ -152,8 +120,6 @@ void serveur_appli(char* service)
 {
   struct sockaddr_in *p_adr_serv, *p_adr_distant;
   int started = 0;
-  int ended = 0;
-  int try = 0;
   int id_socket = h_socket(AF_INET, SOCK_DGRAM);
   adr_socket(service, NULL, SOCK_DGRAM, &p_adr_distant);
   adr_socket(service, SERVEUR_DEFAUT, SOCK_DGRAM, &p_adr_serv);
@@ -163,7 +129,7 @@ void serveur_appli(char* service)
   char* word;
   Actuel a;
   int* indices = malloc(10*sizeof(int));
-  int nb = h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
+  h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
   int nbIndices = 0;
   while(!started){
     if(myStringCmp(bufferReception,"INIT")){
@@ -171,23 +137,25 @@ void serveur_appli(char* service)
       a = init_actuel();
       started++;
     }else{
-      nb = h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
+      h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
     }
   }
   while(1){
-    nb = h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
+    h_recvfrom(id_socket, bufferReception, 4, p_adr_distant);
     if(myStringCmp(bufferReception, "END")){
       h_close(id_socket);
       return;
     }
-    a = ajouter_actuel(a, bufferReception[0]);
-    nbIndices = actualiser(indices,bufferReception[0], word, &a);
+    a = ajouter_actuel(a, bufferReception);
+    nbIndices = actualiser(indices,bufferReception, word, &a);
+    int writePosition = 0;
     if(nbIndices==-1){
-      bufferEmission[0] = 0;
-      bufferEmission[1] = 1;
+      bufferEmission[writePosition] = 0;
+      writePosition++;
+      bufferEmission[writePosition] = 1;
     }else{
-      bufferEmission[0] = nbIndices;
-      int writePosition = 1;
+      bufferEmission[writePosition] = nbIndices;
+      writePosition++;
       for(int i=0;i<nbIndices;i++){
         bufferEmission[writePosition] = '-';
         writePosition++;
@@ -196,6 +164,7 @@ void serveur_appli(char* service)
       }
       bufferEmission[writePosition] = '-';
     }
+    h_sendto(id_socket, bufferEmission, writePosition, p_adr_distant);
   }
 }
 

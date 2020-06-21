@@ -10,10 +10,10 @@ pendu.o: pendu.c string.h
 string.o: string.c string.h
 	gcc -g -c string.c -o string.o
 
-client.o: client.c fon.h
+client.o: client.c fon.h string.h
 	gcc -Wall -Werror -c client.c -o client.o
 
-serveur.o: serveur.c fon.h
+serveur.o: serveur.c fon.h string.h
 	gcc -Wall -Werror -c serveur.c -o serveur.o
 
 fon.o: fon.c fon.h
@@ -22,8 +22,8 @@ fon.o: fon.c fon.h
 exe: pendu.o string.o
 	gcc -g pendue.o string.o -o exe
 
-client: client.o fon.o
+client: client.o fon.o string.o
 	gcc -g fon.o client.o -o client
 
-serveur: serveur.o fon.o
+serveur: serveur.o fon.o string.o
 	gcc -g fon.o serveur.o -o serveur

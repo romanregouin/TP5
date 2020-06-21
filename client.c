@@ -338,7 +338,7 @@ void client_appli(char* serveur, char* service) {
         tampon[1] = 'N';
         tampon[2] = 'I';
         tampon[3] = 'T';
-        int nb = h_sendto(id_socket, tampon, 4, p_adr_distant);
+        nb = h_sendto(id_socket, tampon, 4, p_adr_distant);
         nb = h_recvfrom(id_socket, tampon, 5, p_adr_distant);
         int taille = 0;
         for (int i = 0; i < nb; i++) taille = taille * 10 + tampon[i] - '0';
@@ -356,6 +356,11 @@ void client_appli(char* serveur, char* service) {
       }
     } while ((strcmp(reponse2, "oui") != 0) && (strcmp(reponse2, "non") != 0));
   }
+  tampon[0] = 'E';
+  tampon[1] = 'N';
+  tampon[2] = 'D';
+  nb = h_sendto(id_socket, tampon, 3, p_adr_distant);
+  h_close(id_socket);
   printf("Au revoir !!!\n");
 }
 

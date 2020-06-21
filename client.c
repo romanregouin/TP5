@@ -11,12 +11,20 @@
 /******************************************************************************/
 
 //#include <curses.h> /* Primitives de gestion d'ecran */
+#include <fcntl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/signal.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/wait.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "fon.h" /* primitives de la boite a outils */
+#include "string.h"
 
 #define SERVICE_DEFAUT "1111"
 #define SERVEUR_DEFAUT "127.0.0.1"
@@ -95,25 +103,21 @@ Actuel ajouter_actuel(Actuel a, char* c) {
 }
 
 int actualiser(char* reponse, int indice, Actuel* a) {
-  int j;
-  for (j = 0; j < a->nb; j++) {
-    if (reponse[0] == deviner[j]) {
-      if (string_index_of(a->lettre_bonne, 0, reponse[0]) == -1) {
-        a->lettre_bonne[a->bon] = reponse[0];
-        a->bon++;
-      }
-      return 1;
-    }
+  if (indice == -1) return -1;
+  if (string_index_of(a->lettre_bonne, 0, reponse[0]) == -1) {
+    a->lettre_bonne[a->bon] = reponse[0];
+    a->bon++;
   }
-  return -1;
+  a->mot[indice] = reponse[0];
+  return 1;
 }
 
 int affichage(Actuel a) {
-  int i, j, h;
+  int i, h;
   h = 0;
   for (i = 0; i < a.nb; i++) {
-    if (a.mot[j] != '0') {
-      printf("%c", a.mot[j]);
+    if (a.mot[i] != '0') {
+      printf("%c", a.mot[i]);
     } else {
       printf("-");
       h++;
@@ -222,7 +226,7 @@ void affichage_lettre(Actuel a) {
   printf(" %c \n\n", a.lettre[i]);
 }
 
-int read_3_char(char* ch) {
+void read_3_char(char* ch) {
   char* str = malloc(100);
   strcpy(str, lire_ligne());
   ch[0] = str[0];
@@ -237,14 +241,29 @@ void espace() {
       "__________________\n\n\n");
 }
 
-int main(int nargs, char** args) {
+void client_appli(char* serveur, char* service) {
+  int id_socket = h_socket(AF_INET, SOCK_DGRAM);
+  struct sockaddr_in *p_adr_serv, *p_adr_distant;
+  adr_socket(service, NULL, SOCK_DGRAM, &p_adr_serv);
+  adr_socket(service, SERVEUR_DEFAUT, SOCK_DGRAM, &p_adr_distant);
+  h_bind(id_socket, p_adr_serv);
+  char tampon[20];
+  tampon[0] = 'I';
+  tampon[1] = 'N';
+  tampon[2] = 'I';
+  tampon[3] = 'T';
+  int nb = h_sendto(id_socket, tampon, 4, p_adr_distant);
+  nb = h_recvfrom(id_socket, tampon, 5, p_adr_distant);
+  int taille = 0;
+  for (int i = 0; i < nb; i++) taille = taille * 10 + tampon[i] - '0';
+
   buffer = malloc(100);
   setbuf(stdout, NULL);
   int continuer = 1;
   char reponse1[1];
   char* reponse2 = malloc(3);
-  int random, try
-    , gagner;
+  int try
+    , gagner, indice, k, trouver;
   // initlalize the random generator
 
   try
@@ -252,7 +271,6 @@ int main(int nargs, char** args) {
   printf(
       " 	Bonjour est bienvenue dans le jeu du Pendue !\n 	Vous "
       "avez 10 coups pour deviner le mot !\n 	Bonne chance !\n");
-  random = rand() % 10;
   gagner = 1;
   while (continuer) {
     Actuel a = init_actuel(taille);
@@ -262,15 +280,32 @@ int main(int nargs, char** args) {
     a = ajouter_actuel(a, reponse1);
     while (gagner && try <= 10) {
       printf("\n");
-      if (actualiser(reponse1, deviner, &a) == 1) {
-        gagner = affichage(a, deviner);
-        printf("	Vous avez trouvez une lettre !\n");
-      } else {
+
+      nb = h_sendto(id_socket, reponse1, 1, p_adr_distant);
+      nb = h_recvfrom(id_socket, tampon, 20, p_adr_distant);
+      k = 0;
+      trouver = 0;
+      while (tampon[k] == '-') {
+        trouver = trouver * 10 + tampon[k] - '0';
+        k++;
+      }
+      if (k == 0) trouver = 0;
+      for (int l = 0; l < trouver; l++) {
+        while (tampon[k] == '-') {
+          indice = indice * 10 + tampon[k] - '0';
+        }
+        actualiser(reponse1, indice, &a);
+      }
+      if (trouver == 0) {
         try
           ++;
-        gagner = affichage(a, deviner);
+        gagner = affichage(a);
         affichage_pendue(try);
+      } else {
+        gagner = affichage(a);
+        printf("	Vous avez trouvez une lettre !\n");
       }
+
       espace();
       if (gagner == 1 && try < 10) {
         do {
@@ -299,13 +334,20 @@ int main(int nargs, char** args) {
       if (strcmp(reponse2, "non") == 0) {
         continuer = 0;
       } else if (strcmp(reponse2, "oui") == 0) {
-        random = rand() % 10;
-        string_copy(deviner, d[random]);
+        tampon[0] = 'I';
+        tampon[1] = 'N';
+        tampon[2] = 'I';
+        tampon[3] = 'T';
+        nb = h_sendto(id_socket, tampon, 4, p_adr_distant);
+        nb = h_recvfrom(id_socket, tampon, 5, p_adr_distant);
+        int taille = 0;
+        for (int i = 0; i < nb; i++) taille = taille * 10 + tampon[i] - '0';
         gagner = 1;
         try
           = 0;
         free(a.lettre);
         free(a.lettre_bonne);
+        free(a.mot);
         printf("	C'est repartie pour un tour !!\n");
       } else {
         printf(
@@ -314,14 +356,21 @@ int main(int nargs, char** args) {
       }
     } while ((strcmp(reponse2, "oui") != 0) && (strcmp(reponse2, "non") != 0));
   }
+  tampon[0] = 'E';
+  tampon[1] = 'N';
+  tampon[2] = 'D';
+  nb = h_sendto(id_socket, tampon, 3, p_adr_distant);
+  h_close(id_socket);
   printf("Au revoir !!!\n");
-  return 0;
 }
 
 /*****************************************************************************/
+/* procedure correspondant au traitement du client de votre application */
+
+/*
 void client_appli(char* serveur, char* service)
 
-/* procedure correspondant au traitement du client de votre application */
+
 
 {
   int id_socket = h_socket(AF_INET, SOCK_DGRAM);
@@ -333,5 +382,5 @@ void client_appli(char* serveur, char* service)
   int nb = h_sendto(id_socket, tampon, 5, p_adr_distant);
   printf("%d\n", nb);
 }
-
-/*****************************************************************************/
+*/
+//    /*****************************************************************************/

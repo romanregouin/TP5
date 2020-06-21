@@ -253,7 +253,9 @@ void client_appli(char* serveur, char* service) {
   tampon[2] = 'I';
   tampon[3] = 'T';
   int nb = h_sendto(id_socket, tampon, 4, p_adr_distant);
+  printf("Envoi INIT attante réponse\n");
   nb = h_recvfrom(id_socket, tampon, 5, p_adr_distant);
+  printf("Reponse reçu\n");
   int taille = 0;
   for (int i = 0; i < nb; i++) taille = taille * 10 + tampon[i] - '0';
 

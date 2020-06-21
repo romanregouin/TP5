@@ -67,6 +67,10 @@ int id_socket = h_socket(AF_INET,SOCK_DGRAM);
 struct sockaddr_in *p_adr_serv;
 adr_socket(service,NULL,SOCK_DGRAM,&p_adr_serv);
 h_bind(id_socket,p_adr_serv);
+int taille, len_msg;
+char *msg;
+msg = (char*)calloc(taille,sizeof(char));
+len_msg = h_recvfrom(id_socket,msg,taille,p_adr_serv);
 }
 
 /******************************************************************************/	
